@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div>
+          <div class="brand">
+            <div class="brand-mark"></div>
+            <div>
+              <p class="brand-name">Bright Future School</p>
+              <p class="brand-sub">Attendance Suite</p>
+            </div>
+          </div>
+
+          <nav class="menu">
+            <button class="menu-item active">Dashboard</button>
+            <button class="menu-item">Students</button>
+            <button class="menu-item">Teachers</button>
+            <button class="menu-item">Exams</button>
+            <button class="menu-item">Notice Board</button>
+            <button class="menu-item">Settings</button>
+          </nav>
+        </div>
+
+        <div class="profile">
+          <div class="avatar">JS</div>
+          <div>
+            <p class="profile-name">John Smith</p>
+            <p class="profile-role">Teacher</p>
+          </div>
+        </div>
+      </aside>
+
+      <section class="content">
+        <header class="topbar">
+          <div>
+            <p class="heading-label">Student Attendance</p>
+            <h1>Dashboard</h1>
+          </div>
+          <div class="search-wrap">
+            <input type="search" placeholder="Search student, class or subject" />
+            <button aria-label="Filter">+</button>
+          </div>
+        </header>
+
+        <section class="kpi-grid">
+          <article class="kpi">
+            <p class="kpi-label">Today's Attendance</p>
+            <p class="kpi-value">6825</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Boys Present</p>
+            <p class="kpi-value">4095</p>
+          </article>
+          <article class="kpi">
+            <p class="kpi-label">Girls Present</p>
+            <p class="kpi-value">2730</p>
+          </article>
+          <article class="kpi warning">
+            <p class="kpi-label">Total Absence</p>
+            <p class="kpi-value">195</p>
+          </article>
+        </section>
+
+        <section class="panel chart-panel">
+          <div class="panel-head">
+            <h2>Attendance Overview</h2>
+            <span>Jan 29 - Feb 07</span>
+          </div>
+          <svg class="line-chart" viewBox="0 0 720 240" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="fill-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#6b7cf6" stop-opacity="0.45" />
+                <stop offset="100%" stop-color="#6b7cf6" stop-opacity="0.02" />
+              </linearGradient>
+            </defs>
+            <g class="grid">
+              <line x1="0" y1="40" x2="720" y2="40"></line>
+              <line x1="0" y1="90" x2="720" y2="90"></line>
+              <line x1="0" y1="140" x2="720" y2="140"></line>
+              <line x1="0" y1="190" x2="720" y2="190"></line>
+            </g>
+            <path
+              class="area"
+              d="M0,180 L75,152 L145,162 L220,132 L290,145 L360,112 L430,102 L500,134 L575,108 L645,98 L720,93 L720,240 L0,240 Z"
+            ></path>
+            <polyline
+              class="line"
+              points="0,180 75,152 145,162 220,132 290,145 360,112 430,102 500,134 575,108 645,98 720,93"
+            ></polyline>
+          </svg>
+        </section>
+
+        <section class="panel class-bars">
+          <div class="panel-head">
+            <h2>Attendance by Class</h2>
+            <span>Today</span>
+          </div>
+          <div class="bars" id="bars"></div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>Subject Attendance</h2>
+            <span>Faculty of CS</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Leave</th>
+              </tr>
+            </thead>
+            <tbody id="studentRows"></tbody>
+          </table>
+        </section>
+      </section>
+
+      <aside class="right-rail">
+        <section class="rail-card calendar">
+          <div class="panel-head">
+            <h2>Calendar</h2>
+            <span>Feb 2026</span>
+          </div>
+          <div class="calendar-grid" id="calendar"></div>
+        </section>
+
+        <section class="rail-card stats">
+          <article class="status warning">
+            <p>240</p>
+            <span>Total Students</span>
+          </article>
+          <article class="status success">
+            <p>230</p>
+            <span>Present Today</span>
+          </article>
+          <article class="status danger">
+            <p>10</p>
+            <span>Absent Today</span>
+          </article>
+        </section>
+
+        <section class="rail-card activity">
+          <div class="panel-head">
+            <h2>Today's Activities</h2>
+          </div>
+          <ul>
+            <li><time>08:00</time><p>Class started for Grades 6 to 10.</p></li>
+            <li><time>12:00</time><p>Lunch attendance synced.</p></li>
+            <li><time>15:30</time><p>Daily report shared with admin.</p></li>
+            <li><time>18:00</time><p>Parent summary notifications sent.</p></li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
