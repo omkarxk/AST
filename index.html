@@ -41,8 +41,9 @@
           <div class="avatar">JS</div>
           <div>
             <p class="profile-name">John Smith</p>
-            <p class="profile-role">Teacher</p>
+            <p class="profile-role">Student • Class X</p>
           </div>
+          <span class="visibility-pill" id="profileBadge">Public</span>
         </div>
       </aside>
 
@@ -60,21 +61,51 @@
 
         <section class="kpi-grid">
           <article class="kpi">
-            <p class="kpi-label">Today's Attendance</p>
-            <p class="kpi-value">6825</p>
+            <p class="kpi-label">Total Classes</p>
+            <p class="kpi-value" id="kpiTotalClasses">0</p>
           </article>
           <article class="kpi">
-            <p class="kpi-label">Boys Present</p>
-            <p class="kpi-value">4095</p>
+            <p class="kpi-label">Classes Attended</p>
+            <p class="kpi-value" id="kpiAttendedClasses">0</p>
           </article>
           <article class="kpi">
-            <p class="kpi-label">Girls Present</p>
-            <p class="kpi-value">2730</p>
+            <p class="kpi-label">Classes Missed</p>
+            <p class="kpi-value" id="kpiMissedClasses">0</p>
           </article>
           <article class="kpi warning">
-            <p class="kpi-label">Total Absence</p>
-            <p class="kpi-value">195</p>
+            <p class="kpi-label">Attendance %</p>
+            <p class="kpi-value" id="kpiAttendancePercent">0%</p>
           </article>
+        </section>
+
+        <section class="panel tracker-panel">
+          <div class="panel-head">
+            <h2>My Attendance Tracker</h2>
+            <span id="trackerMessage">Set your totals to calculate attendance.</span>
+          </div>
+          <form id="attendanceForm" class="tracker-form">
+            <label>
+              Total Classes Held
+              <input id="totalClassesInput" type="number" min="0" step="1" value="42" />
+            </label>
+            <label>
+              Classes Attended
+              <input id="attendedClassesInput" type="number" min="0" step="1" value="36" />
+            </label>
+            <button type="submit" class="btn primary">Calculate</button>
+            <button type="button" class="btn success" id="markPresentBtn">Mark Present (+1)</button>
+            <button type="button" class="btn danger" id="markAbsentBtn">Mark Absent (+1)</button>
+            <button type="button" class="btn ghost" id="resetBtn">Reset</button>
+          </form>
+          <div class="progress-wrap">
+            <div class="progress-head">
+              <p>Attendance Percentage</p>
+              <strong id="attendancePercentLarge">0%</strong>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="attendanceProgress"></div>
+            </div>
+          </div>
         </section>
 
         <section class="panel chart-panel">
@@ -116,20 +147,20 @@
 
         <section class="panel table-panel">
           <div class="panel-head">
-            <h2>Subject Attendance</h2>
-            <span>Faculty of CS</span>
+            <h2>Attendance Activity Log</h2>
+            <span>Latest updates</span>
           </div>
           <table>
             <thead>
               <tr>
-                <th>Roll</th>
-                <th>Name</th>
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Leave</th>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Total Classes</th>
+                <th>Attended</th>
+                <th>Percentage</th>
               </tr>
             </thead>
-            <tbody id="studentRows"></tbody>
+            <tbody id="logRows"></tbody>
           </table>
         </section>
       </section>
@@ -138,24 +169,41 @@
         <section class="rail-card calendar">
           <div class="panel-head">
             <h2>Calendar</h2>
-            <span>Feb 2026</span>
+            <span id="calendarMonth">Feb 2026</span>
           </div>
           <div class="calendar-grid" id="calendar"></div>
         </section>
 
         <section class="rail-card stats">
           <article class="status warning">
-            <p>240</p>
-            <span>Total Students</span>
+            <p>75%</p>
+            <span>Minimum Required</span>
           </article>
           <article class="status success">
-            <p>230</p>
-            <span>Present Today</span>
+            <p id="currentPercent">0%</p>
+            <span>Current Attendance</span>
           </article>
           <article class="status danger">
-            <p>10</p>
-            <span>Absent Today</span>
+            <p id="safeBunk">0</p>
+            <span>Classes You Can Miss</span>
           </article>
+        </section>
+
+        <section class="rail-card visibility-card">
+          <div class="panel-head">
+            <h2>Profile Visibility</h2>
+          </div>
+          <label class="switch-row">
+            <span>Public profile</span>
+            <input id="visibilityToggle" type="checkbox" checked />
+          </label>
+          <p class="visibility-help" id="visibilityHint">Visible to teachers and class mentors.</p>
+          <div class="public-profile" id="publicProfile">
+            <p class="public-title">Public Student Profile</p>
+            <p><strong>Name:</strong> John Smith</p>
+            <p><strong>Class:</strong> X</p>
+            <p><strong>Attendance:</strong> <span id="profilePercent">0%</span></p>
+          </div>
         </section>
 
         <section class="rail-card activity">

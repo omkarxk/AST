@@ -157,6 +157,21 @@ body {
   font-size: 11px;
 }
 
+.visibility-pill {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e5f8f1;
+  color: #157e62;
+  font-weight: 700;
+}
+
+.visibility-pill.private {
+  background: #f0f2ff;
+  color: #4b57c7;
+}
+
 .content {
   display: grid;
   gap: 16px;
@@ -236,6 +251,103 @@ h1 {
 
 .kpi.warning .kpi-value {
   color: #cc4b4b;
+}
+
+.tracker-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.tracker-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tracker-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tracker-form input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-soft);
+}
+
+.btn {
+  border: 0;
+  border-radius: 10px;
+  min-height: 40px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: linear-gradient(145deg, #7d86ff, #6773f7);
+  color: #fff;
+}
+
+.btn.success {
+  background: #dcf9ef;
+  color: #168066;
+}
+
+.btn.danger {
+  background: #ffe9ec;
+  color: #be3644;
+}
+
+.btn.ghost {
+  background: #f1f2fa;
+  color: #4b4f7b;
+}
+
+.progress-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--surface-soft);
+}
+
+.progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.progress-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.progress-head strong {
+  font-size: 24px;
+}
+
+.progress-track {
+  height: 12px;
+  background: #e7e9fb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #51c9a6, #6d76f7);
+  transition: width 240ms ease;
 }
 
 .panel,
@@ -462,6 +574,50 @@ th {
   font-size: 12px;
 }
 
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.switch-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.visibility-help {
+  margin: 8px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.public-profile {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  background: #fafaff;
+}
+
+.public-profile.hidden {
+  display: none;
+}
+
+.public-profile p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.public-title {
+  font-weight: 700;
+  color: #3e4290;
+}
+
 @media (max-width: 1200px) {
   .app-shell {
     grid-template-columns: 220px 1fr;
@@ -501,6 +657,10 @@ th {
 
   .kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tracker-form {
+    grid-template-columns: 1fr;
   }
 
   .class-bars .bars {
