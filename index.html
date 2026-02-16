@@ -41,7 +41,7 @@
           <div class="avatar">JS</div>
           <div>
             <p class="profile-name">John Smith</p>
-            <p class="profile-role">Student • Class X</p>
+            <p class="profile-role" id="sidebarRole">Student • Class X</p>
           </div>
           <span class="visibility-pill" id="profileBadge">Public</span>
         </div>
@@ -54,7 +54,7 @@
             <h1>Dashboard</h1>
           </div>
           <div class="search-wrap">
-            <input type="search" placeholder="Search student, class or subject" />
+            <input id="globalSearch" type="search" placeholder="Search actions, student, class, email" />
             <button aria-label="Filter">+</button>
           </div>
         </header>
@@ -95,8 +95,15 @@
             <button type="submit" class="btn primary">Calculate</button>
             <button type="button" class="btn success" id="markPresentBtn">Mark Present (+1)</button>
             <button type="button" class="btn danger" id="markAbsentBtn">Mark Absent (+1)</button>
+            <button type="button" class="btn soft" id="undoBtn">Undo Last</button>
             <button type="button" class="btn ghost" id="resetBtn">Reset</button>
           </form>
+          <div class="goal-wrap">
+            <label for="goalRange">Target Attendance Goal</label>
+            <input id="goalRange" type="range" min="75" max="100" step="1" value="85" />
+            <strong id="goalValue">85%</strong>
+            <p id="goalMessage">You are 0.0% away from your target.</p>
+          </div>
           <div class="progress-wrap">
             <div class="progress-head">
               <p>Attendance Percentage</p>
@@ -111,7 +118,7 @@
         <section class="panel chart-panel">
           <div class="panel-head">
             <h2>Attendance Overview</h2>
-            <span>Jan 29 - Feb 07</span>
+            <span>Recent trend</span>
           </div>
           <svg class="line-chart" viewBox="0 0 720 240" preserveAspectRatio="none" aria-hidden="true">
             <defs>
@@ -126,15 +133,43 @@
               <line x1="0" y1="140" x2="720" y2="140"></line>
               <line x1="0" y1="190" x2="720" y2="190"></line>
             </g>
-            <path
-              class="area"
-              d="M0,180 L75,152 L145,162 L220,132 L290,145 L360,112 L430,102 L500,134 L575,108 L645,98 L720,93 L720,240 L0,240 Z"
-            ></path>
-            <polyline
-              class="line"
-              points="0,180 75,152 145,162 220,132 290,145 360,112 430,102 500,134 575,108 645,98 720,93"
-            ></polyline>
+            <path class="area" id="trendArea"></path>
+            <polyline class="line" id="trendLine"></polyline>
           </svg>
+        </section>
+
+        <section class="panel profile-panel">
+          <div class="panel-head">
+            <h2>Student Profile Details</h2>
+            <span>Editable</span>
+          </div>
+          <form id="profileForm" class="profile-form">
+            <label>
+              Full Name
+              <input id="profileNameInput" type="text" value="John Smith" />
+            </label>
+            <label>
+              Roll Number
+              <input id="rollNumberInput" type="text" value="AST-2026-014" />
+            </label>
+            <label>
+              Class
+              <input id="classInput" type="text" value="Class X" />
+            </label>
+            <label>
+              Section
+              <input id="sectionInput" type="text" value="B" />
+            </label>
+            <label>
+              Email
+              <input id="emailInput" type="email" value="john.smith@student.edu" />
+            </label>
+            <label>
+              Phone
+              <input id="phoneInput" type="tel" value="+1 555 334 9201" />
+            </label>
+            <button type="submit" class="btn primary">Save Profile</button>
+          </form>
         </section>
 
         <section class="panel class-bars">
@@ -148,7 +183,16 @@
         <section class="panel table-panel">
           <div class="panel-head">
             <h2>Attendance Activity Log</h2>
-            <span>Latest updates</span>
+            <div class="log-controls">
+              <select id="logFilter">
+                <option value="All">All</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Manual">Manual</option>
+                <option value="Profile">Profile</option>
+              </select>
+              <button id="clearLogBtn" class="btn mini" type="button">Clear</button>
+            </div>
           </div>
           <table>
             <thead>
@@ -200,8 +244,9 @@
           <p class="visibility-help" id="visibilityHint">Visible to teachers and class mentors.</p>
           <div class="public-profile" id="publicProfile">
             <p class="public-title">Public Student Profile</p>
-            <p><strong>Name:</strong> John Smith</p>
-            <p><strong>Class:</strong> X</p>
+            <p><strong>Name:</strong> <span id="publicName">John Smith</span></p>
+            <p><strong>Class:</strong> <span id="publicClass">Class X</span></p>
+            <p><strong>Roll:</strong> <span id="publicRoll">AST-2026-014</span></p>
             <p><strong>Attendance:</strong> <span id="profilePercent">0%</span></p>
           </div>
         </section>

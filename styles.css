@@ -312,6 +312,19 @@ h1 {
   color: #4b4f7b;
 }
 
+.btn.soft {
+  background: #eef1ff;
+  color: #4853bf;
+}
+
+.btn.mini {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: #eef1ff;
+  color: #4f59bf;
+}
+
 .progress-wrap {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -348,6 +361,33 @@ h1 {
   width: 0%;
   background: linear-gradient(90deg, #51c9a6, #6d76f7);
   transition: width 240ms ease;
+}
+
+.goal-wrap {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.goal-wrap label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.goal-wrap input[type="range"] {
+  width: 100%;
+}
+
+.goal-wrap strong {
+  font-size: 16px;
+}
+
+.goal-wrap p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .panel,
@@ -396,6 +436,49 @@ h1 {
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.profile-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-form {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-form input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--surface-soft);
+}
+
+.log-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.log-controls select {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12px;
 }
 
 .class-bars .bars {
@@ -660,6 +743,10 @@ th {
   }
 
   .tracker-form {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-form {
     grid-template-columns: 1fr;
   }
 
