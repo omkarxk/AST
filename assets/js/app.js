@@ -23,12 +23,12 @@ const defaultState = {
   logs: [],
   undoStack: [],
   profile: {
-    name: "John Smith",
-    roll: "AST-2026-014",
-    className: "Class X",
-    section: "B",
-    email: "john.smith@student.edu",
-    phone: "+1 555 334 9201",
+    name: "Avery Johnson",
+    roll: "NB-2026-1042",
+    className: "Grade 10",
+    section: "A",
+    email: "avery.johnson@northbridge.edu",
+    phone: "+1 415 555 0182",
   },
 };
 
