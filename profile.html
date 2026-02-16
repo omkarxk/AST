@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./profile.css" />
+  </head>
+  <body>
+    <main class="profile-page">
+      <header class="profile-top">
+        <a class="back-link" href="./index.html">← Back to Dashboard</a>
+        <h1>Student Profile</h1>
+      </header>
+
+      <section class="profile-grid">
+        <article class="panel profile-main-card">
+          <div class="profile-hero">
+            <div class="avatar big" id="profileAvatar">JS</div>
+            <div>
+              <h2 id="studentName">John Smith</h2>
+              <p id="studentRole">Class X • Section B</p>
+            </div>
+          </div>
+          <div class="detail-grid">
+            <div><span>Roll Number</span><strong id="studentRoll">AST-2026-014</strong></div>
+            <div><span>Email</span><strong id="studentEmail">john.smith@student.edu</strong></div>
+            <div><span>Phone</span><strong id="studentPhone">+1 555 334 9201</strong></div>
+            <div><span>Profile Visibility</span><strong id="studentVisibility">Public</strong></div>
+          </div>
+        </article>
+
+        <article class="panel profile-stats-card">
+          <h3>Attendance Summary</h3>
+          <div class="summary-grid">
+            <div><span>Total Classes</span><strong id="totalClasses">0</strong></div>
+            <div><span>Classes Attended</span><strong id="attendedClasses">0</strong></div>
+            <div><span>Classes Missed</span><strong id="missedClasses">0</strong></div>
+            <div><span>Attendance %</span><strong id="attendancePercent">0.0%</strong></div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="profileProgress"></div>
+          </div>
+          <p class="goal-note" id="goalNote">Target: 85%</p>
+        </article>
+      </section>
+
+      <section class="panel profile-log-card">
+        <div class="panel-head">
+          <h2>Recent Activity</h2>
+          <span>Latest 8 records</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Action</th>
+              <th>Total</th>
+              <th>Attended</th>
+              <th>Percent</th>
+            </tr>
+          </thead>
+          <tbody id="recentLogs"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="./profile.js"></script>
+  </body>
+</html>

@@ -140,6 +140,17 @@ body {
   border-radius: 14px;
 }
 
+.profile-link {
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.profile-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(42, 52, 124, 0.08);
+}
+
 .avatar {
   width: 34px;
   height: 34px;

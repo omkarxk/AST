@@ -1,0 +1,112 @@
+.profile-page {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-top h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.back-link {
+  text-decoration: none;
+  color: #434ebf;
+  font-weight: 700;
+}
+
+.profile-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1.3fr 1fr;
+}
+
+.profile-hero {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.avatar.big {
+  width: 52px;
+  height: 52px;
+  font-size: 16px;
+}
+
+.profile-hero h2 {
+  margin: 0;
+}
+
+.profile-hero p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.detail-grid,
+.summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 12px;
+}
+
+.detail-grid div,
+.summary-grid div {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--surface-soft);
+}
+
+.detail-grid span,
+.summary-grid span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.detail-grid strong,
+.summary-grid strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.goal-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-log-card {
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .profile-page {
+    padding: 16px;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
