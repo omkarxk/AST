@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Northbridge Attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+  </head>
+  <body>
+    <main class="profile-page">
+      <section class="panel" style="max-width:520px;margin:40px auto;">
+        <div class="panel-head">
+          <h2>Sign In</h2>
+          <span>Role-based landing enabled</span>
+        </div>
+        <form id="loginForm" class="profile-form">
+          <label>
+            Full Name
+            <input id="loginName" type="text" value="Avery Johnson" required />
+          </label>
+          <label>
+            Role
+            <select id="loginRole" required>
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </label>
+          <button class="btn primary" type="submit">Continue</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/login.js"></script>
+  </body>
+</html>

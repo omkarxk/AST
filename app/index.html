@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Attendance Dashboard</title>
+    <title>Northbridge Attendance App</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,10 +12,7 @@
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
   </head>
-  <body>
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
-
+  <body data-theme="light" data-role="Student">
     <main class="app-shell">
       <aside class="sidebar">
         <div>
@@ -26,19 +23,17 @@
               <p class="brand-sub">Student Attendance Portal</p>
             </div>
           </div>
-
           <nav class="menu">
             <button class="menu-item active">Dashboard</button>
             <button class="menu-item">Students</button>
-            <button class="menu-item">Teachers</button>
-            <button class="menu-item">Exams</button>
-            <button class="menu-item">Notice Board</button>
+            <button class="menu-item">Timetable</button>
+            <button class="menu-item">Reports</button>
             <button class="menu-item">Settings</button>
           </nav>
         </div>
 
         <a class="profile profile-link" href="./profile.html">
-          <div class="avatar">JS</div>
+          <div class="avatar">AJ</div>
           <div>
             <p class="profile-name">Avery Johnson</p>
             <p class="profile-role" id="sidebarRole">Student • Grade 10</p>
@@ -50,14 +45,44 @@
       <section class="content">
         <header class="topbar">
           <div>
-            <p class="heading-label">Student Attendance</p>
-            <h1>Dashboard</h1>
+            <p class="heading-label">Attendance Management</p>
+            <h1 id="pageTitle">Student Dashboard</h1>
           </div>
           <div class="search-wrap">
-            <input id="globalSearch" type="search" placeholder="Search actions, student, class, email" />
-            <button aria-label="Filter">+</button>
+            <input id="globalSearch" type="search" placeholder="Search logs, student, class..." />
+            <select id="roleSelect" aria-label="Select role">
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+              <option value="Admin">Admin</option>
+            </select>
+            <button id="logoutBtn" class="btn mini" type="button">Logout</button>
           </div>
         </header>
+
+        <p class="sync-banner" id="syncBanner">Online. All changes are synced.</p>
+
+        <section class="panel student-manager">
+          <div class="panel-head">
+            <h2>Multi-Student Manager</h2>
+            <span>Add or switch students</span>
+          </div>
+          <div class="student-tools">
+            <label>
+              Active Student
+              <select id="studentSelect"></select>
+            </label>
+            <button id="openAddStudentBtn" class="btn soft" type="button">Add Student</button>
+          </div>
+          <form id="addStudentForm" class="profile-form hidden-form">
+            <label>Full Name<input id="newStudentName" type="text" /></label>
+            <label>Roll Number<input id="newStudentRoll" type="text" /></label>
+            <label>Class<input id="newStudentClass" type="text" /></label>
+            <label>Section<input id="newStudentSection" type="text" /></label>
+            <label>Email<input id="newStudentEmail" type="email" /></label>
+            <label>Phone<input id="newStudentPhone" type="tel" /></label>
+            <button type="submit" class="btn primary">Save Student</button>
+          </form>
+        </section>
 
         <section class="kpi-grid">
           <article class="kpi">
@@ -80,62 +105,47 @@
 
         <section class="panel tracker-panel">
           <div class="panel-head">
-            <h2>My Attendance Tracker</h2>
+            <h2>Attendance Tracker</h2>
             <span id="trackerMessage">Set your totals to calculate attendance.</span>
           </div>
           <form id="attendanceForm" class="tracker-form">
-            <label>
-              Total Classes Held
-              <input id="totalClassesInput" type="number" min="0" step="1" value="42" />
-            </label>
-            <label>
-              Classes Attended
-              <input id="attendedClassesInput" type="number" min="0" step="1" value="36" />
-            </label>
+            <label>Total Classes Held<input id="totalClassesInput" type="number" min="0" step="1" /></label>
+            <label>Classes Attended<input id="attendedClassesInput" type="number" min="0" step="1" /></label>
             <button type="submit" class="btn primary">Calculate</button>
-            <button type="button" class="btn success" id="markPresentBtn">Mark Present (+1)</button>
-            <button type="button" class="btn danger" id="markAbsentBtn">Mark Absent (+1)</button>
-            <button type="button" class="btn soft" id="undoBtn">Undo Last</button>
+            <button type="button" class="btn success" id="markPresentBtn">Mark Present</button>
+            <button type="button" class="btn danger" id="markAbsentBtn">Mark Absent</button>
+            <button type="button" class="btn soft" id="undoBtn">Undo</button>
             <button type="button" class="btn ghost" id="resetBtn">Reset</button>
           </form>
           <div class="goal-wrap">
             <label for="goalRange">Target Attendance Goal</label>
-            <input id="goalRange" type="range" min="75" max="100" step="1" value="85" />
+            <input id="goalRange" type="range" min="75" max="100" step="1" />
             <strong id="goalValue">85%</strong>
-            <p id="goalMessage">You are 0.0% away from your target.</p>
+            <p id="goalMessage">Target gap appears here.</p>
           </div>
           <div class="progress-wrap">
             <div class="progress-head">
               <p>Attendance Percentage</p>
               <strong id="attendancePercentLarge">0%</strong>
             </div>
-            <div class="progress-track">
-              <div class="progress-fill" id="attendanceProgress"></div>
-            </div>
+            <div class="progress-track"><div class="progress-fill" id="attendanceProgress"></div></div>
           </div>
         </section>
 
         <section class="panel chart-panel">
           <div class="panel-head">
-            <h2>Attendance Overview</h2>
+            <h2>Attendance Overview (Chart.js)</h2>
             <span>Recent trend</span>
           </div>
-          <svg class="line-chart" viewBox="0 0 720 240" preserveAspectRatio="none" aria-hidden="true">
-            <defs>
-              <linearGradient id="fill-gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#6b7cf6" stop-opacity="0.45" />
-                <stop offset="100%" stop-color="#6b7cf6" stop-opacity="0.02" />
-              </linearGradient>
-            </defs>
-            <g class="grid">
-              <line x1="0" y1="40" x2="720" y2="40"></line>
-              <line x1="0" y1="90" x2="720" y2="90"></line>
-              <line x1="0" y1="140" x2="720" y2="140"></line>
-              <line x1="0" y1="190" x2="720" y2="190"></line>
-            </g>
-            <path class="area" id="trendArea"></path>
-            <polyline class="line" id="trendLine"></polyline>
-          </svg>
+          <canvas id="trendChart" height="120"></canvas>
+        </section>
+
+        <section class="panel class-bars">
+          <div class="panel-head">
+            <h2>Attendance by Class (Chart.js)</h2>
+            <span>Comparison</span>
+          </div>
+          <canvas id="classChart" height="120"></canvas>
         </section>
 
         <section class="panel profile-panel">
@@ -144,40 +154,105 @@
             <span>Editable</span>
           </div>
           <form id="profileForm" class="profile-form">
-            <label>
-              Full Name
-              <input id="profileNameInput" type="text" value="Avery Johnson" />
-            </label>
-            <label>
-              Roll Number
-              <input id="rollNumberInput" type="text" value="NB-2026-1042" />
-            </label>
-            <label>
-              Class
-              <input id="classInput" type="text" value="Grade 10" />
-            </label>
-            <label>
-              Section
-              <input id="sectionInput" type="text" value="A" />
-            </label>
-            <label>
-              Email
-              <input id="emailInput" type="email" value="avery.johnson@northbridge.edu" />
-            </label>
-            <label>
-              Phone
-              <input id="phoneInput" type="tel" value="+1 415 555 0182" />
-            </label>
+            <label>Full Name<input id="profileNameInput" type="text" /></label>
+            <label>Roll Number<input id="rollNumberInput" type="text" /></label>
+            <label>Class<input id="classInput" type="text" /></label>
+            <label>Section<input id="sectionInput" type="text" /></label>
+            <label>Email<input id="emailInput" type="email" /></label>
+            <label>Phone<input id="phoneInput" type="tel" /></label>
+            <label>Profile Photo<input id="profilePhotoInput" type="file" accept="image/*" /></label>
+            <div class="photo-preview-wrap"><img id="profilePhotoPreview" alt="Profile preview" /></div>
             <button type="submit" class="btn primary">Save Profile</button>
           </form>
         </section>
 
-        <section class="panel class-bars">
+        <section class="panel tools-panel">
           <div class="panel-head">
-            <h2>Attendance by Class</h2>
-            <span>Today</span>
+            <h2>Smart Tools</h2>
+            <span>QR, Timetable, Predictor, Export</span>
           </div>
-          <div class="bars" id="bars"></div>
+          <div class="tools-grid">
+            <article class="tool-card">
+              <h3>Timetable Check-in</h3>
+              <label>Subject<select id="subjectSelect"></select></label>
+              <label>Period<select id="periodSelect"><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option></select></label>
+              <button class="btn success" id="markTimetablePresentBtn" type="button">Mark from Timetable</button>
+            </article>
+            <article class="tool-card">
+              <h3>QR Attendance</h3>
+              <div class="qr-code" id="qrCodeBox">-</div>
+              <div class="qr-actions">
+                <button class="btn soft" id="generateQrBtn" type="button">Generate Code</button>
+                <input id="qrInput" type="text" placeholder="Enter session code" />
+                <button class="btn primary" id="checkinQrBtn" type="button">Check In</button>
+              </div>
+            </article>
+            <article class="tool-card">
+              <h3>Predictor & Reports</h3>
+              <p id="predictorText">Predictor output.</p>
+              <div class="tool-row">
+                <button class="btn mini" id="exportCsvBtn" type="button">Export CSV</button>
+                <button class="btn mini" id="printPdfBtn" type="button">Print / PDF</button>
+              </div>
+              <div class="streak-box">
+                <p>Current Streak</p>
+                <strong id="streakCount">0</strong>
+                <span id="badgeLabel">Starter</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel insight-grid">
+          <article class="insight-card">
+            <div class="panel-head">
+              <h2>Attendance Heatmap</h2>
+              <span>Last 30 days</span>
+            </div>
+            <div class="heatmap" id="heatmapGrid"></div>
+          </article>
+          <article class="insight-card">
+            <div class="panel-head">
+              <h2>Class Comparison</h2>
+              <span>Student vs Grade</span>
+            </div>
+            <div class="compare-bars">
+              <div class="compare-row">
+                <p>Your Attendance</p>
+                <div class="compare-track"><div id="compareStudentBar"></div></div>
+                <strong id="compareStudentText">0%</strong>
+              </div>
+              <div class="compare-row">
+                <p>Class Average</p>
+                <div class="compare-track"><div id="compareClassBar"></div></div>
+                <strong id="compareClassText">0%</strong>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel leave-panel role-teacher role-admin">
+          <div class="panel-head">
+            <h2>Leave Request Workflow</h2>
+            <span>Submit and review</span>
+          </div>
+          <form id="leaveForm" class="leave-form">
+            <label>Date<input id="leaveDate" type="date" /></label>
+            <label>Reason<input id="leaveReason" type="text" placeholder="Reason" /></label>
+            <button class="btn primary" type="submit">Submit Request</button>
+          </form>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="leaveRows"></tbody>
+          </table>
         </section>
 
         <section class="panel table-panel">
@@ -190,6 +265,7 @@
                 <option value="Absent">Absent</option>
                 <option value="Manual">Manual</option>
                 <option value="Profile">Profile</option>
+                <option value="Leave">Leave</option>
               </select>
               <button id="clearLogBtn" class="btn mini" type="button">Clear</button>
             </div>
@@ -213,7 +289,7 @@
         <section class="rail-card calendar">
           <div class="panel-head">
             <h2>Calendar</h2>
-            <span id="calendarMonth">Feb 2026</span>
+            <span id="calendarMonth">-</span>
           </div>
           <div class="calendar-grid" id="calendar"></div>
         </section>
@@ -231,15 +307,21 @@
             <p id="safeBunk">0</p>
             <span>Classes You Can Miss</span>
           </article>
+          <article class="status neutral">
+            <p id="roleLabel">Student</p>
+            <span>Current Role</span>
+          </article>
         </section>
 
         <section class="rail-card visibility-card">
-          <div class="panel-head">
-            <h2>Profile Visibility</h2>
-          </div>
+          <div class="panel-head"><h2>Profile & Theme</h2></div>
           <label class="switch-row">
             <span>Public profile</span>
             <input id="visibilityToggle" type="checkbox" checked />
+          </label>
+          <label class="switch-row">
+            <span>Dark mode</span>
+            <input id="themeToggle" type="checkbox" />
           </label>
           <p class="visibility-help" id="visibilityHint">Visible to teachers and class mentors.</p>
           <div class="public-profile" id="publicProfile">
@@ -252,19 +334,23 @@
         </section>
 
         <section class="rail-card activity">
-          <div class="panel-head">
-            <h2>Today's Activities</h2>
-          </div>
-          <ul>
-            <li><time>08:00</time><p>Class started for Grades 6 to 10.</p></li>
-            <li><time>12:00</time><p>Lunch attendance synced.</p></li>
-            <li><time>15:30</time><p>Daily report shared with admin.</p></li>
-            <li><time>18:00</time><p>Parent summary notifications sent.</p></li>
+          <div class="panel-head"><h2>Notifications</h2></div>
+          <ul id="notificationList">
+            <li><time>Now</time><p>No alerts yet.</p></li>
           </ul>
         </section>
       </aside>
+
+      <nav class="mobile-nav">
+        <button class="menu-item active">Home</button>
+        <button class="menu-item">Students</button>
+        <button class="menu-item">Reports</button>
+        <button class="menu-item">Profile</button>
+      </nav>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/js/api.js"></script>
     <script src="../assets/js/app.js"></script>
   </body>
 </html>

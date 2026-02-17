@@ -1,86 +1,22 @@
-const STORAGE_KEY = "ast_attendance_app_state_v2";
-
-const classData = [
-  { name: "Nursery", value: 254 },
-  { name: "Class I", value: 620 },
-  { name: "Class II", value: 912 },
-  { name: "Class III", value: 968 },
-  { name: "Class IV", value: 650 },
-  { name: "Class V", value: 902 },
-  { name: "Class VI", value: 700 },
-  { name: "Class VII", value: 806 },
-  { name: "Class VIII", value: 530 },
-  { name: "Class IX", value: 835 },
-];
-
-const defaultState = {
-  totalClasses: 42,
-  attendedClasses: 36,
-  visibilityPublic: true,
-  goalPercent: 85,
+const SUBJECTS = ["Mathematics", "Physics", "Chemistry", "English", "Computer Science", "History"];
+const state = {
+  session: null,
+  data: null,
+  student: null,
+  undoStack: [],
   searchQuery: "",
   logFilter: "All",
-  logs: [],
-  undoStack: [],
-  profile: {
-    name: "Avery Johnson",
-    roll: "NB-2026-1042",
-    className: "Grade 10",
-    section: "A",
-    email: "avery.johnson@northbridge.edu",
-    phone: "+1 415 555 0182",
-  },
+  pendingSync: 0,
+  theme: localStorage.getItem("ast_theme") || "light",
+  charts: { trend: null, classBars: null },
 };
 
-const state = loadState();
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...defaultState };
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaultState,
-      ...parsed,
-      profile: { ...defaultState.profile, ...(parsed.profile || {}) },
-      undoStack: Array.isArray(parsed.undoStack) ? parsed.undoStack : [],
-      logs: Array.isArray(parsed.logs) ? parsed.logs : [],
-    };
-  } catch {
-    return { ...defaultState };
-  }
-}
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function sanitizeAttendance(total, attended) {
-  const safeTotal = Number.isFinite(total) ? Math.max(0, Math.floor(total)) : 0;
-  const safeAttended = Number.isFinite(attended) ? Math.max(0, Math.floor(attended)) : 0;
-  return {
-    totalClasses: safeTotal,
-    attendedClasses: Math.min(safeAttended, safeTotal),
-  };
-}
-
-function calculatePercentage(total, attended) {
+function pct(total, attended) {
   if (!total) return 0;
   return (attended / total) * 100;
 }
 
-function classesCanMiss(total, attended) {
-  if (!total) return 0;
-  return Math.floor(attended / 0.75 - total);
-}
-
-function classesNeededToRecover(total, attended) {
-  const deficit = 0.75 * total - attended;
-  if (deficit <= 0) return 0;
-  return Math.ceil(deficit / 0.25);
-}
-
-function formatPercent(value) {
+function fmtPct(value) {
   return `${value.toFixed(1)}%`;
 }
 
@@ -89,116 +25,300 @@ function initials(name) {
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
+    .map((x) => x[0].toUpperCase())
     .join("");
 }
 
-function snapshotAttendance() {
-  state.undoStack.push({
-    totalClasses: state.totalClasses,
-    attendedClasses: state.attendedClasses,
-  });
-  state.undoStack = state.undoStack.slice(-20);
+function setAvatar(el, name, photo) {
+  if (!el) return;
+  if (photo) {
+    el.style.backgroundImage = `url("${photo}")`;
+    el.style.backgroundSize = "cover";
+    el.style.backgroundPosition = "center";
+    el.textContent = "";
+    return;
+  }
+  el.style.backgroundImage = "";
+  el.textContent = initials(name) || "ST";
 }
 
-function addLog(type, action) {
-  const percentValue = calculatePercentage(state.totalClasses, state.attendedClasses);
-  state.logs.unshift({
-    type,
-    action,
-    time: new Date().toLocaleString(),
-    total: state.totalClasses,
-    attended: state.attendedClasses,
-    percent: formatPercent(percentValue),
-    percentValue,
+function selectedLogs() {
+  const logs = state.student.logs || [];
+  const q = state.searchQuery.trim().toLowerCase();
+  return logs.filter((l) => {
+    const filterOk = state.logFilter === "All" || l.type === state.logFilter;
+    if (!filterOk) return false;
+    if (!q) return true;
+    const blob = `${l.type} ${l.action} ${l.time} ${l.percent}`.toLowerCase();
+    return blob.includes(q);
   });
-  state.logs = state.logs.slice(0, 40);
 }
 
-function renderBars() {
-  const root = document.getElementById("bars");
-  const max = Math.max(...classData.map((x) => x.value));
-  root.innerHTML = classData
-    .map((item) => {
-      const height = Math.round((item.value / max) * 140 + 24);
-      return `
-        <article class="bar-card">
-          <div class="bar" style="height:${height}px"><span>${item.value}</span></div>
-          <p>${item.name}</p>
-        </article>
-      `;
+function setTheme(theme) {
+  state.theme = theme;
+  document.body.setAttribute("data-theme", theme);
+  document.getElementById("themeToggle").checked = theme === "dark";
+  localStorage.setItem("ast_theme", theme);
+}
+
+function pageByRole(role) {
+  if (role === "Teacher") return "Teacher Dashboard";
+  if (role === "Admin") return "Admin Control Center";
+  return "Student Dashboard";
+}
+
+function syncBannerText() {
+  if (navigator.onLine) {
+    if (state.pendingSync > 0) {
+      const text = `Online. Synced ${state.pendingSync} offline actions.`;
+      state.pendingSync = 0;
+      return text;
+    }
+    return "Online. All changes are synced.";
+  }
+  return `Offline mode. ${state.pendingSync} actions pending sync.`;
+}
+
+function renderCalendar(date = new Date()) {
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const y = date.getFullYear();
+  const m = date.getMonth();
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const prevDays = new Date(y, m, 0).getDate();
+  const grid = document.getElementById("calendar");
+  grid.innerHTML = "";
+  document.getElementById("calendarMonth").textContent = date.toLocaleString("en-US", { month: "short", year: "numeric" });
+  dayNames.forEach((d) => {
+    const n = document.createElement("div");
+    n.className = "day-name";
+    n.textContent = d;
+    grid.appendChild(n);
+  });
+  for (let i = first - 1; i >= 0; i -= 1) {
+    const d = document.createElement("div");
+    d.className = "day-num muted";
+    d.textContent = prevDays - i;
+    grid.appendChild(d);
+  }
+  for (let day = 1; day <= days; day += 1) {
+    const d = document.createElement("div");
+    d.className = `day-num${day === date.getDate() ? " active" : ""}`;
+    d.textContent = day;
+    grid.appendChild(d);
+  }
+}
+
+function renderCharts() {
+  const trendEl = document.getElementById("trendChart");
+  const classEl = document.getElementById("classChart");
+  if (!window.Chart || !trendEl || !classEl) return;
+
+  const trendPoints = (state.student.logs || [])
+    .slice(0, 10)
+    .reverse()
+    .map((l) => (typeof l.percentValue === "number" ? Number(l.percentValue.toFixed(1)) : 0));
+  const points = trendPoints.length ? trendPoints : [pct(state.student.totalClasses, state.student.attendedClasses)];
+  while (points.length < 10) points.unshift(points[0]);
+
+  if (!state.charts.trend) {
+    state.charts.trend = new Chart(trendEl, {
+      type: "line",
+      data: {
+        labels: points.map((_, i) => `P${i + 1}`),
+        datasets: [
+          {
+            data: points,
+            borderColor: "#6d76f7",
+            backgroundColor: "rgba(109,118,247,0.25)",
+            fill: true,
+            tension: 0.35,
+          },
+        ],
+      },
+      options: {
+        animation: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { min: 0, max: 100 } },
+        responsive: true,
+        maintainAspectRatio: true,
+      },
+    });
+  } else {
+    state.charts.trend.data.labels = points.map((_, i) => `P${i + 1}`);
+    state.charts.trend.data.datasets[0].data = points;
+    state.charts.trend.update("none");
+  }
+
+  const bars = [78, 85, 91, 74, 88, 82, 90, 76, 83, 87];
+  if (!state.charts.classBars) {
+    state.charts.classBars = new Chart(classEl, {
+      type: "bar",
+      data: {
+        labels: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"],
+        datasets: [{ data: bars, backgroundColor: "rgba(109,118,247,0.6)", borderRadius: 8 }],
+      },
+      options: {
+        animation: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { min: 0, max: 100 } },
+        responsive: true,
+        maintainAspectRatio: true,
+      },
+    });
+  } else {
+    state.charts.classBars.data.datasets[0].data = bars;
+    state.charts.classBars.update("none");
+  }
+}
+
+function renderStudentList() {
+  const select = document.getElementById("studentSelect");
+  select.innerHTML = state.data.students.map((s) => `<option value="${s.id}">${s.name} (${s.roll})</option>`).join("");
+  select.value = state.student.id;
+}
+
+function renderLogs() {
+  const tbody = document.getElementById("logRows");
+  const logs = selectedLogs();
+  if (!logs.length) {
+    tbody.innerHTML = `<tr><td colspan="5">No records found.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = logs
+    .map((l) => `<tr><td>${l.time}</td><td>${l.action}</td><td>${l.total}</td><td>${l.attended}</td><td>${l.percent}</td></tr>`)
+    .join("");
+}
+
+function renderNotifications() {
+  const root = document.getElementById("notificationList");
+  const notes = state.data.notifications || [];
+  if (!notes.length) {
+    root.innerHTML = `<li><time>Now</time><p>No alerts yet.</p></li>`;
+    return;
+  }
+  root.innerHTML = notes
+    .slice(0, 6)
+    .map((n) => `<li><time>${n.time}</time><p>${n.message}</p></li>`)
+    .join("");
+}
+
+function renderLeaveRequests() {
+  const root = document.getElementById("leaveRows");
+  const requests = state.data.leaveRequests || [];
+  if (!requests.length) {
+    root.innerHTML = `<tr><td colspan="5">No leave requests yet.</td></tr>`;
+    return;
+  }
+  root.innerHTML = requests
+    .map((r) => {
+      const actions =
+        r.status === "Pending" && (state.session.role === "Teacher" || state.session.role === "Admin")
+          ? `<button type="button" class="btn mini" data-id="${r.id}" data-action="Approved">Approve</button>
+             <button type="button" class="btn mini" data-id="${r.id}" data-action="Rejected">Reject</button>`
+          : "-";
+      return `<tr><td>${r.date}</td><td>${r.reason}</td><td>${r.studentName}</td><td>${r.status}</td><td>${actions}</td></tr>`;
     })
     .join("");
 }
 
-function renderTrendChart() {
-  const line = document.getElementById("trendLine");
-  const area = document.getElementById("trendArea");
-  const recent = state.logs
-    .slice(0, 10)
-    .reverse()
-    .map((entry) => (typeof entry.percentValue === "number" ? entry.percentValue : 0));
-
-  const source = recent.length ? recent : [calculatePercentage(state.totalClasses, state.attendedClasses)];
-  while (source.length < 10) source.unshift(source[0]);
-
-  const step = 720 / (source.length - 1);
-  const points = source.map((value, index) => {
-    const x = Math.round(index * step);
-    const y = Math.round(200 - Math.min(100, Math.max(0, value)) * 1.5);
-    return [x, y];
-  });
-
-  const pointString = points.map(([x, y]) => `${x},${y}`).join(" ");
-  const areaPath = `M${points.map(([x, y]) => `${x},${y}`).join(" L")} L720,240 L0,240 Z`;
-  line.setAttribute("points", pointString);
-  area.setAttribute("d", areaPath);
-}
-
-function renderLogRows() {
-  const root = document.getElementById("logRows");
-  const query = state.searchQuery.trim().toLowerCase();
-
-  const filtered = state.logs.filter((entry) => {
-    const filterMatches = state.logFilter === "All" || entry.type === state.logFilter;
-    if (!filterMatches) return false;
-    if (!query) return true;
-    const blob = `${entry.type} ${entry.action} ${entry.time} ${entry.total} ${entry.attended} ${entry.percent}`.toLowerCase();
-    return blob.includes(query);
-  });
-
-  if (!filtered.length) {
-    root.innerHTML = `
-      <tr>
-        <td colspan="5">No records match your current filters.</td>
-      </tr>
-    `;
-    return;
+function renderHeatmap() {
+  const root = document.getElementById("heatmapGrid");
+  const today = new Date();
+  root.innerHTML = "";
+  for (let i = 29; i >= 0; i -= 1) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const value = state.student.dailyAttendance[key] ?? Math.max(45, Math.min(95, state.data.classAveragePercent - 9 + (i % 8)));
+    const light = 92 - Math.round((value / 100) * 48);
+    const cell = document.createElement("div");
+    cell.className = "heatmap-cell";
+    cell.style.backgroundColor = `hsl(227 70% ${light}%)`;
+    cell.title = `${key}: ${value}%`;
+    root.appendChild(cell);
   }
-
-  root.innerHTML = filtered
-    .map(
-      (entry) => `
-      <tr>
-        <td>${entry.time}</td>
-        <td>${entry.action}</td>
-        <td>${entry.total}</td>
-        <td>${entry.attended}</td>
-        <td>${entry.percent}</td>
-      </tr>
-    `
-    )
-    .join("");
 }
 
-function updateVisibilityUI() {
-  const badge = document.getElementById("profileBadge");
-  const hint = document.getElementById("visibilityHint");
-  const card = document.getElementById("publicProfile");
-  const toggle = document.getElementById("visibilityToggle");
+function renderComparison() {
+  const sp = pct(state.student.totalClasses, state.student.attendedClasses);
+  const cp = state.data.classAveragePercent;
+  document.getElementById("compareStudentBar").style.width = `${Math.min(100, sp)}%`;
+  document.getElementById("compareClassBar").style.width = `${Math.min(100, cp)}%`;
+  document.getElementById("compareStudentText").textContent = fmtPct(sp);
+  document.getElementById("compareClassText").textContent = fmtPct(cp);
+}
 
-  toggle.checked = state.visibilityPublic;
-  if (state.visibilityPublic) {
+function renderMetrics() {
+  const t = state.student.totalClasses;
+  const a = state.student.attendedClasses;
+  const m = t - a;
+  const p = pct(t, a);
+  const goal = state.student.goalPercent;
+  const canMiss = t ? Math.floor(a / 0.75 - t) : 0;
+  const needGoal = Math.max(0, Math.ceil(((goal / 100) * t - a) / (1 - goal / 100)));
+
+  document.getElementById("kpiTotalClasses").textContent = String(t);
+  document.getElementById("kpiAttendedClasses").textContent = String(a);
+  document.getElementById("kpiMissedClasses").textContent = String(m);
+  document.getElementById("kpiAttendancePercent").textContent = fmtPct(p);
+  document.getElementById("attendancePercentLarge").textContent = fmtPct(p);
+  document.getElementById("attendanceProgress").style.width = `${Math.min(100, p)}%`;
+  document.getElementById("currentPercent").textContent = fmtPct(p);
+  document.getElementById("profilePercent").textContent = fmtPct(p);
+  document.getElementById("safeBunk").textContent = canMiss >= 0 ? String(canMiss) : `Need ${Math.ceil((0.75 * t - a) / 0.25)}`;
+  document.getElementById("goalValue").textContent = `${goal}%`;
+  document.getElementById("goalMessage").textContent =
+    p >= goal ? `You are +${(p - goal).toFixed(1)}% above your target.` : `You are ${(goal - p).toFixed(1)}% away from target.`;
+  document.getElementById("predictorText").textContent =
+    needGoal > 0 ? `You need ${needGoal} more present classes to reach ${goal}%.` : `You are at or above ${goal}% target.`;
+
+  let streak = 0;
+  for (const l of state.student.logs) {
+    if (l.type === "Present") streak += 1;
+    else break;
+  }
+  document.getElementById("streakCount").textContent = String(streak);
+  document.getElementById("badgeLabel").textContent =
+    streak >= 20 ? "Attendance Champion" : streak >= 10 ? "Consistency Star" : streak >= 5 ? "Rising Streak" : "Starter";
+}
+
+function renderProfile() {
+  const s = state.student;
+  const roleText = `${s.className} • Sec ${s.section}`;
+  document.querySelector(".profile-name").textContent = s.name;
+  document.getElementById("sidebarRole").textContent = `${state.session.role} • ${roleText}`;
+  setAvatar(document.querySelector(".avatar"), s.name, s.photoDataUrl);
+  document.getElementById("publicName").textContent = s.name;
+  document.getElementById("publicClass").textContent = roleText;
+  document.getElementById("publicRoll").textContent = s.roll;
+
+  document.getElementById("profileNameInput").value = s.name;
+  document.getElementById("rollNumberInput").value = s.roll;
+  document.getElementById("classInput").value = s.className;
+  document.getElementById("sectionInput").value = s.section;
+  document.getElementById("emailInput").value = s.email;
+  document.getElementById("phoneInput").value = s.phone;
+  document.getElementById("goalRange").value = String(s.goalPercent);
+  document.getElementById("totalClassesInput").value = String(s.totalClasses);
+  document.getElementById("attendedClassesInput").value = String(s.attendedClasses);
+  document.getElementById("visibilityToggle").checked = s.visibilityPublic;
+
+  const preview = document.getElementById("profilePhotoPreview");
+  if (s.photoDataUrl) {
+    preview.src = s.photoDataUrl;
+    preview.style.display = "block";
+  } else {
+    preview.style.display = "none";
+    preview.removeAttribute("src");
+  }
+}
+
+function renderVisibility() {
+  const badge = document.getElementById("profileBadge");
+  const card = document.getElementById("publicProfile");
+  const hint = document.getElementById("visibilityHint");
+  if (state.student.visibilityPublic) {
     badge.textContent = "Public";
     badge.classList.remove("private");
     hint.textContent = "Visible to teachers and class mentors.";
@@ -211,230 +331,273 @@ function updateVisibilityUI() {
   }
 }
 
-function updateProfileUI() {
-  const { profile } = state;
-  const roleText = `${profile.className} • Sec ${profile.section}`;
-  document.querySelector(".profile-name").textContent = profile.name;
-  document.getElementById("sidebarRole").textContent = `Student • ${roleText}`;
-  document.querySelector(".avatar").textContent = initials(profile.name) || "ST";
-
-  document.getElementById("publicName").textContent = profile.name;
-  document.getElementById("publicClass").textContent = roleText;
-  document.getElementById("publicRoll").textContent = profile.roll;
-
-  document.getElementById("profileNameInput").value = profile.name;
-  document.getElementById("rollNumberInput").value = profile.roll;
-  document.getElementById("classInput").value = profile.className;
-  document.getElementById("sectionInput").value = profile.section;
-  document.getElementById("emailInput").value = profile.email;
-  document.getElementById("phoneInput").value = profile.phone;
-}
-
-function updateMetricsUI() {
-  const total = state.totalClasses;
-  const attended = state.attendedClasses;
-  const missed = total - attended;
-  const percent = calculatePercentage(total, attended);
-  const canMiss = classesCanMiss(total, attended);
-  const deltaFromGoal = percent - state.goalPercent;
-
-  document.getElementById("kpiTotalClasses").textContent = String(total);
-  document.getElementById("kpiAttendedClasses").textContent = String(attended);
-  document.getElementById("kpiMissedClasses").textContent = String(missed);
-  document.getElementById("kpiAttendancePercent").textContent = formatPercent(percent);
-  document.getElementById("attendancePercentLarge").textContent = formatPercent(percent);
-  document.getElementById("currentPercent").textContent = formatPercent(percent);
-  document.getElementById("profilePercent").textContent = formatPercent(percent);
-  document.getElementById("attendanceProgress").style.width = `${Math.min(percent, 100)}%`;
-
-  const trackerMessage = document.getElementById("trackerMessage");
-  if (percent >= state.goalPercent) {
-    trackerMessage.textContent = "Excellent. You are meeting your target.";
-  } else if (percent >= 75) {
-    trackerMessage.textContent = "Above minimum, keep attending to hit your goal.";
-  } else {
-    trackerMessage.textContent = "Warning: below 75%. Mark more present classes to recover.";
-  }
-
-  const safeBunk = document.getElementById("safeBunk");
-  if (canMiss >= 0) {
-    safeBunk.textContent = String(canMiss);
-  } else {
-    safeBunk.textContent = `Need ${classesNeededToRecover(total, attended)}`;
-  }
-
-  document.getElementById("goalRange").value = String(state.goalPercent);
-  document.getElementById("goalValue").textContent = `${state.goalPercent}%`;
-  const goalMessage = document.getElementById("goalMessage");
-  if (deltaFromGoal >= 0) {
-    goalMessage.textContent = `You are +${deltaFromGoal.toFixed(1)}% above your target.`;
-  } else {
-    goalMessage.textContent = `You are ${Math.abs(deltaFromGoal).toFixed(1)}% away from your target.`;
-  }
-}
-
-function renderCalendar(date) {
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const selectedDay = date.getDate();
-
-  document.getElementById("calendarMonth").textContent = date.toLocaleString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevMonthDays = new Date(year, month, 0).getDate();
-
-  const grid = document.getElementById("calendar");
-  grid.innerHTML = "";
-
-  dayNames.forEach((d) => {
-    const n = document.createElement("div");
-    n.className = "day-name";
-    n.textContent = d;
-    grid.appendChild(n);
-  });
-
-  for (let i = firstDay - 1; i >= 0; i -= 1) {
-    const d = document.createElement("div");
-    d.className = "day-num muted";
-    d.textContent = prevMonthDays - i;
-    grid.appendChild(d);
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    const d = document.createElement("div");
-    d.className = `day-num${day === selectedDay ? " active" : ""}`;
-    d.textContent = day;
-    grid.appendChild(d);
-  }
-}
-
-function bindEvents() {
-  const totalInput = document.getElementById("totalClassesInput");
-  const attendedInput = document.getElementById("attendedClassesInput");
-  const attendanceForm = document.getElementById("attendanceForm");
-  const profileForm = document.getElementById("profileForm");
-  const presentBtn = document.getElementById("markPresentBtn");
-  const absentBtn = document.getElementById("markAbsentBtn");
-  const undoBtn = document.getElementById("undoBtn");
-  const resetBtn = document.getElementById("resetBtn");
-  const visibilityToggle = document.getElementById("visibilityToggle");
-  const goalRange = document.getElementById("goalRange");
-  const logFilter = document.getElementById("logFilter");
-  const searchInput = document.getElementById("globalSearch");
-  const clearLogBtn = document.getElementById("clearLogBtn");
-
-  attendanceForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    snapshotAttendance();
-    const next = sanitizeAttendance(Number(totalInput.value), Number(attendedInput.value));
-    state.totalClasses = next.totalClasses;
-    state.attendedClasses = next.attendedClasses;
-    addLog("Manual", "Manual totals updated");
-    render();
-  });
-
-  presentBtn.addEventListener("click", () => {
-    snapshotAttendance();
-    state.totalClasses += 1;
-    state.attendedClasses += 1;
-    addLog("Present", "Marked present for class");
-    render();
-  });
-
-  absentBtn.addEventListener("click", () => {
-    snapshotAttendance();
-    state.totalClasses += 1;
-    addLog("Absent", "Marked absent for class");
-    render();
-  });
-
-  undoBtn.addEventListener("click", () => {
-    const previous = state.undoStack.pop();
-    if (!previous) return;
-    state.totalClasses = previous.totalClasses;
-    state.attendedClasses = previous.attendedClasses;
-    addLog("Manual", "Undid last attendance action");
-    render();
-  });
-
-  resetBtn.addEventListener("click", () => {
-    snapshotAttendance();
-    state.totalClasses = 0;
-    state.attendedClasses = 0;
-    addLog("Manual", "Attendance counters reset");
-    render();
-  });
-
-  visibilityToggle.addEventListener("change", () => {
-    state.visibilityPublic = visibilityToggle.checked;
-    addLog("Profile", `Visibility set to ${state.visibilityPublic ? "Public" : "Private"}`);
-    render();
-  });
-
-  goalRange.addEventListener("input", () => {
-    state.goalPercent = Number(goalRange.value);
-    render();
-  });
-
-  goalRange.addEventListener("change", () => {
-    addLog("Manual", `Goal changed to ${state.goalPercent}%`);
-    render();
-  });
-
-  profileForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    state.profile = {
-      name: document.getElementById("profileNameInput").value.trim() || defaultState.profile.name,
-      roll: document.getElementById("rollNumberInput").value.trim() || defaultState.profile.roll,
-      className: document.getElementById("classInput").value.trim() || defaultState.profile.className,
-      section: document.getElementById("sectionInput").value.trim() || defaultState.profile.section,
-      email: document.getElementById("emailInput").value.trim() || defaultState.profile.email,
-      phone: document.getElementById("phoneInput").value.trim() || defaultState.profile.phone,
-    };
-    addLog("Profile", "Student profile details updated");
-    render();
-  });
-
-  logFilter.addEventListener("change", () => {
-    state.logFilter = logFilter.value;
-    renderLogRows();
-    saveState();
-  });
-
-  searchInput.addEventListener("input", () => {
-    state.searchQuery = searchInput.value;
-    renderLogRows();
-    saveState();
-  });
-
-  clearLogBtn.addEventListener("click", () => {
-    state.logs = [];
-    render();
-  });
+function renderTop() {
+  document.getElementById("roleSelect").value = state.session.role;
+  document.getElementById("roleLabel").textContent = state.session.role;
+  document.getElementById("pageTitle").textContent = pageByRole(state.session.role);
+  document.body.setAttribute("data-role", state.session.role);
+  const banner = document.getElementById("syncBanner");
+  banner.textContent = syncBannerText();
+  banner.classList.toggle("offline", !navigator.onLine);
 }
 
 function render() {
-  document.getElementById("totalClassesInput").value = String(state.totalClasses);
-  document.getElementById("attendedClassesInput").value = String(state.attendedClasses);
-  document.getElementById("goalRange").value = String(state.goalPercent);
-  document.getElementById("logFilter").value = state.logFilter;
-  document.getElementById("globalSearch").value = state.searchQuery;
-
-  updateMetricsUI();
-  updateProfileUI();
-  updateVisibilityUI();
-  renderLogRows();
-  renderTrendChart();
-  saveState();
+  renderTop();
+  renderStudentList();
+  renderProfile();
+  renderVisibility();
+  renderMetrics();
+  renderLogs();
+  renderNotifications();
+  renderLeaveRequests();
+  renderComparison();
+  renderHeatmap();
+  renderCharts();
 }
 
-renderBars();
+async function refresh() {
+  const { data, student } = await window.attendanceApi.getDashboard();
+  state.data = data;
+  state.student = student;
+  render();
+}
+
+async function updateStudent(patch, type = "Manual", action = "Student data updated") {
+  await window.attendanceApi.updateSelectedStudent(patch);
+  await window.attendanceApi.appendLog(type, action);
+  if (!navigator.onLine) state.pendingSync += 1;
+  await refresh();
+}
+
+async function bindEvents() {
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    await window.attendanceApi.logout();
+    window.location.href = "./login.html";
+  });
+
+  document.getElementById("globalSearch").addEventListener("input", (e) => {
+    state.searchQuery = e.target.value;
+    renderLogs();
+  });
+
+  document.getElementById("logFilter").addEventListener("change", (e) => {
+    state.logFilter = e.target.value;
+    renderLogs();
+  });
+
+  document.getElementById("clearLogBtn").addEventListener("click", async () => {
+    await window.attendanceApi.updateSelectedStudent({ logs: [] });
+    await refresh();
+  });
+
+  document.getElementById("roleSelect").addEventListener("change", async (e) => {
+    state.session.role = e.target.value;
+    await window.attendanceApi.login({ name: state.session.name, role: state.session.role });
+    await window.attendanceApi.addNotification(`Role switched to ${state.session.role}.`);
+    await refresh();
+  });
+
+  document.getElementById("themeToggle").addEventListener("change", (e) => setTheme(e.target.checked ? "dark" : "light"));
+
+  document.getElementById("studentSelect").addEventListener("change", async (e) => {
+    await window.attendanceApi.selectStudent(e.target.value);
+    await refresh();
+  });
+
+  document.getElementById("openAddStudentBtn").addEventListener("click", () => {
+    document.getElementById("addStudentForm").classList.toggle("open");
+  });
+
+  document.getElementById("addStudentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById("newStudentName").value.trim(),
+      roll: document.getElementById("newStudentRoll").value.trim(),
+      className: document.getElementById("newStudentClass").value.trim(),
+      section: document.getElementById("newStudentSection").value.trim(),
+      email: document.getElementById("newStudentEmail").value.trim(),
+      phone: document.getElementById("newStudentPhone").value.trim(),
+      totalClasses: 0,
+      attendedClasses: 0,
+      goalPercent: 85,
+    };
+    if (!payload.name || !payload.roll) return;
+    await window.attendanceApi.addStudent(payload);
+    await window.attendanceApi.addNotification(`Student ${payload.name} added.`);
+    e.target.reset();
+    e.target.classList.remove("open");
+    await refresh();
+  });
+
+  document.getElementById("attendanceForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    const total = Math.max(0, Number(document.getElementById("totalClassesInput").value) || 0);
+    const attended = Math.max(0, Number(document.getElementById("attendedClassesInput").value) || 0);
+    await updateStudent({ totalClasses: total, attendedClasses: Math.min(attended, total) }, "Manual", "Manual totals updated");
+  });
+
+  document.getElementById("markPresentBtn").addEventListener("click", async () => {
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    await updateStudent(
+      { totalClasses: state.student.totalClasses + 1, attendedClasses: state.student.attendedClasses + 1 },
+      "Present",
+      "Marked present for class"
+    );
+  });
+
+  document.getElementById("markAbsentBtn").addEventListener("click", async () => {
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    const nextTotal = state.student.totalClasses + 1;
+    const nextAttended = state.student.attendedClasses;
+    await updateStudent({ totalClasses: nextTotal, attendedClasses: nextAttended }, "Absent", "Marked absent for class");
+    if (pct(nextTotal, nextAttended) < 75) {
+      await window.attendanceApi.addNotification("Attendance dropped below 75%. Parent notification queued.", "warn");
+      await refresh();
+    }
+  });
+
+  document.getElementById("undoBtn").addEventListener("click", async () => {
+    const prev = state.undoStack.pop();
+    if (!prev) return;
+    await updateStudent(prev, "Manual", "Undid last action");
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", async () => {
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    await updateStudent({ totalClasses: 0, attendedClasses: 0 }, "Manual", "Reset attendance counters");
+  });
+
+  document.getElementById("goalRange").addEventListener("change", async (e) => {
+    await updateStudent({ goalPercent: Number(e.target.value) }, "Manual", `Goal changed to ${e.target.value}%`);
+  });
+
+  document.getElementById("profileForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await updateStudent(
+      {
+        name: document.getElementById("profileNameInput").value.trim(),
+        roll: document.getElementById("rollNumberInput").value.trim(),
+        className: document.getElementById("classInput").value.trim(),
+        section: document.getElementById("sectionInput").value.trim(),
+        email: document.getElementById("emailInput").value.trim(),
+        phone: document.getElementById("phoneInput").value.trim(),
+      },
+      "Profile",
+      "Updated student profile details"
+    );
+  });
+
+  document.getElementById("profilePhotoInput").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      await updateStudent({ photoDataUrl: String(reader.result || "") }, "Profile", "Updated profile photo");
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById("visibilityToggle").addEventListener("change", async (e) => {
+    await updateStudent({ visibilityPublic: e.target.checked }, "Profile", `Profile visibility changed to ${e.target.checked ? "public" : "private"}`);
+  });
+
+  const subjectSelect = document.getElementById("subjectSelect");
+  subjectSelect.innerHTML = SUBJECTS.map((s) => `<option value="${s}">${s}</option>`).join("");
+
+  document.getElementById("markTimetablePresentBtn").addEventListener("click", async () => {
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    const period = document.getElementById("periodSelect").value;
+    await updateStudent(
+      { totalClasses: state.student.totalClasses + 1, attendedClasses: state.student.attendedClasses + 1 },
+      "Present",
+      `Timetable check-in: ${subjectSelect.value} (${period})`
+    );
+  });
+
+  document.getElementById("generateQrBtn").addEventListener("click", async () => {
+    const code = `${Math.floor(100000 + Math.random() * 900000)}`;
+    await window.attendanceApi.setQrSessionCode(code);
+    await window.attendanceApi.addNotification(`Session code ${code} generated.`);
+    await refresh();
+  });
+
+  document.getElementById("checkinQrBtn").addEventListener("click", async () => {
+    const value = document.getElementById("qrInput").value.trim();
+    if (!state.data.qrSessionCode) {
+      await window.attendanceApi.addNotification("Generate a session code first.");
+      await refresh();
+      return;
+    }
+    if (value !== state.data.qrSessionCode) {
+      await window.attendanceApi.addNotification("Invalid session code entered.");
+      await refresh();
+      return;
+    }
+    state.undoStack.push({ totalClasses: state.student.totalClasses, attendedClasses: state.student.attendedClasses });
+    await updateStudent(
+      { totalClasses: state.student.totalClasses + 1, attendedClasses: state.student.attendedClasses + 1 },
+      "Present",
+      "QR check-in successful"
+    );
+    document.getElementById("qrInput").value = "";
+  });
+
+  document.getElementById("leaveForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const date = document.getElementById("leaveDate").value;
+    const reason = document.getElementById("leaveReason").value.trim();
+    if (!date || !reason) return;
+    await window.attendanceApi.addLeaveRequest({ date, reason, studentName: state.student.name });
+    await window.attendanceApi.appendLog("Leave", "Leave request submitted");
+    e.target.reset();
+    await refresh();
+  });
+
+  document.getElementById("leaveRows").addEventListener("click", async (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    const id = target.dataset.id;
+    const action = target.dataset.action;
+    if (!id || !action) return;
+    await window.attendanceApi.updateLeaveStatus(id, action);
+    await window.attendanceApi.appendLog("Leave", `Leave request ${action.toLowerCase()}`);
+    await refresh();
+  });
+
+  document.getElementById("exportCsvBtn").addEventListener("click", () => {
+    const rows = [
+      ["Time", "Type", "Action", "Total", "Attended", "Percent"],
+      ...(state.student.logs || []).map((l) => [l.time, l.type, l.action, l.total, l.attended, l.percent]),
+    ];
+    const csv = rows.map((r) => r.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${state.student.name.replaceAll(" ", "_").toLowerCase()}_attendance.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  document.getElementById("printPdfBtn").addEventListener("click", () => window.print());
+
+  window.addEventListener("online", refresh);
+  window.addEventListener("offline", () => {
+    state.pendingSync += 1;
+    renderTop();
+  });
+}
+
+async function init() {
+  state.session = await window.attendanceApi.getSession();
+  if (!state.session) {
+    window.location.href = "./login.html";
+    return;
+  }
+  setTheme(state.theme);
+  await refresh();
+  await bindEvents();
+}
+
 renderCalendar(new Date());
-bindEvents();
-if (!state.logs.length) addLog("Manual", "Initial totals loaded");
-render();
+init();
