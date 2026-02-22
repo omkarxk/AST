@@ -60,8 +60,13 @@
         </header>
 
         <p class="sync-banner" id="syncBanner">Online. All changes are synced.</p>
+        <div class="chip-row">
+          <span class="chip" id="chipRole">Role: Student</span>
+          <span class="chip" id="chipVisibility">Visibility: Public</span>
+          <span class="chip" id="chipSync">Sync: Online</span>
+        </div>
 
-        <section class="panel student-manager">
+        <section class="panel student-manager collapsible">
           <div class="panel-head">
             <h2>Multi-Student Manager</h2>
             <span>Add or switch students</span>
@@ -74,12 +79,12 @@
             <button id="openAddStudentBtn" class="btn soft" type="button">Add Student</button>
           </div>
           <form id="addStudentForm" class="profile-form hidden-form">
-            <label>Full Name<input id="newStudentName" type="text" /></label>
-            <label>Roll Number<input id="newStudentRoll" type="text" /></label>
-            <label>Class<input id="newStudentClass" type="text" /></label>
-            <label>Section<input id="newStudentSection" type="text" /></label>
-            <label>Email<input id="newStudentEmail" type="email" /></label>
-            <label>Phone<input id="newStudentPhone" type="tel" /></label>
+            <label>Full Name<input id="newStudentName" type="text" required /><small class="helper-text">Use first and last name.</small></label>
+            <label>Roll Number<input id="newStudentRoll" type="text" required /><small class="helper-text">Unique roll id.</small></label>
+            <label>Class<input id="newStudentClass" type="text" /><small class="helper-text">Example: Grade 10</small></label>
+            <label>Section<input id="newStudentSection" type="text" /><small class="helper-text">Example: A</small></label>
+            <label>Email<input id="newStudentEmail" type="email" /><small class="helper-text">Valid school email</small></label>
+            <label>Phone<input id="newStudentPhone" type="tel" /><small class="helper-text">Include country code</small></label>
             <button type="submit" class="btn primary">Save Student</button>
           </form>
         </section>
@@ -87,23 +92,23 @@
         <section class="kpi-grid">
           <article class="kpi">
             <p class="kpi-label">Total Classes</p>
-            <p class="kpi-value" id="kpiTotalClasses">0</p>
+            <p class="kpi-value skeleton-target" id="kpiTotalClasses">0</p>
           </article>
           <article class="kpi">
             <p class="kpi-label">Classes Attended</p>
-            <p class="kpi-value" id="kpiAttendedClasses">0</p>
+            <p class="kpi-value skeleton-target" id="kpiAttendedClasses">0</p>
           </article>
           <article class="kpi">
             <p class="kpi-label">Classes Missed</p>
-            <p class="kpi-value" id="kpiMissedClasses">0</p>
+            <p class="kpi-value skeleton-target" id="kpiMissedClasses">0</p>
           </article>
           <article class="kpi warning">
             <p class="kpi-label">Attendance %</p>
-            <p class="kpi-value" id="kpiAttendancePercent">0%</p>
+            <p class="kpi-value skeleton-target" id="kpiAttendancePercent">0%</p>
           </article>
         </section>
 
-        <section class="panel tracker-panel">
+        <section class="panel tracker-panel collapsible">
           <div class="panel-head">
             <h2>Attendance Tracker</h2>
             <span id="trackerMessage">Set your totals to calculate attendance.</span>
@@ -132,7 +137,7 @@
           </div>
         </section>
 
-        <section class="panel chart-panel">
+        <section class="panel chart-panel collapsible">
           <div class="panel-head">
             <h2>Attendance Overview (Chart.js)</h2>
             <span>Recent trend</span>
@@ -140,7 +145,7 @@
           <canvas id="trendChart" height="120"></canvas>
         </section>
 
-        <section class="panel class-bars">
+        <section class="panel class-bars collapsible">
           <div class="panel-head">
             <h2>Attendance by Class (Chart.js)</h2>
             <span>Comparison</span>
@@ -148,25 +153,33 @@
           <canvas id="classChart" height="120"></canvas>
         </section>
 
-        <section class="panel profile-panel">
+        <section class="panel profile-panel collapsible">
           <div class="panel-head">
             <h2>Student Profile Details</h2>
             <span>Editable</span>
           </div>
+          <div class="profile-hero-block">
+            <div class="avatar hero-avatar" id="heroAvatar">AJ</div>
+            <div>
+              <p class="hero-title" id="heroName">Avery Johnson</p>
+              <p class="hero-sub" id="heroClass">Grade 10 • Sec A</p>
+            </div>
+            <a class="btn mini" href="./profile.html">Open Full Profile</a>
+          </div>
           <form id="profileForm" class="profile-form">
-            <label>Full Name<input id="profileNameInput" type="text" /></label>
-            <label>Roll Number<input id="rollNumberInput" type="text" /></label>
-            <label>Class<input id="classInput" type="text" /></label>
-            <label>Section<input id="sectionInput" type="text" /></label>
-            <label>Email<input id="emailInput" type="email" /></label>
-            <label>Phone<input id="phoneInput" type="tel" /></label>
+            <label>Full Name<input id="profileNameInput" type="text" required /><small class="helper-text">Required</small></label>
+            <label>Roll Number<input id="rollNumberInput" type="text" required /><small class="helper-text">Required</small></label>
+            <label>Class<input id="classInput" type="text" /><small class="helper-text">Example: Grade 10</small></label>
+            <label>Section<input id="sectionInput" type="text" /><small class="helper-text">Example: A</small></label>
+            <label>Email<input id="emailInput" type="email" required /><small class="helper-text" id="emailHint">Use a valid email</small></label>
+            <label>Phone<input id="phoneInput" type="tel" required /><small class="helper-text" id="phoneHint">Min 10 digits</small></label>
             <label>Profile Photo<input id="profilePhotoInput" type="file" accept="image/*" /></label>
             <div class="photo-preview-wrap"><img id="profilePhotoPreview" alt="Profile preview" /></div>
             <button type="submit" class="btn primary">Save Profile</button>
           </form>
         </section>
 
-        <section class="panel tools-panel">
+        <section class="panel tools-panel collapsible">
           <div class="panel-head">
             <h2>Smart Tools</h2>
             <span>QR, Timetable, Predictor, Export</span>
@@ -203,7 +216,7 @@
           </div>
         </section>
 
-        <section class="panel insight-grid">
+        <section class="panel insight-grid collapsible">
           <article class="insight-card">
             <div class="panel-head">
               <h2>Attendance Heatmap</h2>
@@ -231,7 +244,7 @@
           </article>
         </section>
 
-        <section class="panel leave-panel role-teacher role-admin">
+        <section class="panel leave-panel role-teacher role-admin collapsible">
           <div class="panel-head">
             <h2>Leave Request Workflow</h2>
             <span>Submit and review</span>
@@ -255,7 +268,7 @@
           </table>
         </section>
 
-        <section class="panel table-panel">
+        <section class="panel table-panel collapsible">
           <div class="panel-head">
             <h2>Attendance Activity Log</h2>
             <div class="log-controls">
@@ -322,6 +335,14 @@
           <label class="switch-row">
             <span>Dark mode</span>
             <input id="themeToggle" type="checkbox" />
+          </label>
+          <label class="switch-row">
+            <span>Theme preset</span>
+            <select id="themePreset">
+              <option value="academic">Academic</option>
+              <option value="minimal">Minimal</option>
+              <option value="contrast">High Contrast</option>
+            </select>
           </label>
           <p class="visibility-help" id="visibilityHint">Visible to teachers and class mentors.</p>
           <div class="public-profile" id="publicProfile">

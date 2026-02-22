@@ -8,6 +8,7 @@ const state = {
   logFilter: "All",
   pendingSync: 0,
   theme: localStorage.getItem("ast_theme") || "light",
+  themePreset: localStorage.getItem("ast_theme_preset") || "academic",
   charts: { trend: null, classBars: null },
 };
 
@@ -59,6 +60,14 @@ function setTheme(theme) {
   document.body.setAttribute("data-theme", theme);
   document.getElementById("themeToggle").checked = theme === "dark";
   localStorage.setItem("ast_theme", theme);
+}
+
+function setThemePreset(preset) {
+  state.themePreset = preset;
+  document.body.setAttribute("data-preset", preset);
+  const presetSelect = document.getElementById("themePreset");
+  if (presetSelect) presetSelect.value = preset;
+  localStorage.setItem("ast_theme_preset", preset);
 }
 
 function pageByRole(role) {
@@ -121,6 +130,11 @@ function renderCharts() {
   const points = trendPoints.length ? trendPoints : [pct(state.student.totalClasses, state.student.attendedClasses)];
   while (points.length < 10) points.unshift(points[0]);
 
+  const trendCtx = trendEl.getContext("2d");
+  const trendGradient = trendCtx.createLinearGradient(0, 0, 0, 220);
+  trendGradient.addColorStop(0, "rgba(109,118,247,0.42)");
+  trendGradient.addColorStop(1, "rgba(109,118,247,0.05)");
+
   if (!state.charts.trend) {
     state.charts.trend = new Chart(trendEl, {
       type: "line",
@@ -130,15 +144,23 @@ function renderCharts() {
           {
             data: points,
             borderColor: "#6d76f7",
-            backgroundColor: "rgba(109,118,247,0.25)",
+            backgroundColor: trendGradient,
             fill: true,
             tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 5,
           },
         ],
       },
       options: {
         animation: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            displayColors: false,
+            callbacks: { label: (ctx) => `Attendance: ${ctx.parsed.y.toFixed(1)}%` },
+          },
+        },
         scales: { y: { min: 0, max: 100 } },
         responsive: true,
         maintainAspectRatio: true,
@@ -147,20 +169,25 @@ function renderCharts() {
   } else {
     state.charts.trend.data.labels = points.map((_, i) => `P${i + 1}`);
     state.charts.trend.data.datasets[0].data = points;
+    state.charts.trend.data.datasets[0].backgroundColor = trendGradient;
     state.charts.trend.update("none");
   }
 
   const bars = [78, 85, 91, 74, 88, 82, 90, 76, 83, 87];
+  const classColors = bars.map((v) => (v >= 85 ? "rgba(49,186,146,0.65)" : v < 75 ? "rgba(239,91,102,0.65)" : "rgba(109,118,247,0.65)"));
   if (!state.charts.classBars) {
     state.charts.classBars = new Chart(classEl, {
       type: "bar",
       data: {
         labels: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"],
-        datasets: [{ data: bars, backgroundColor: "rgba(109,118,247,0.6)", borderRadius: 8 }],
+        datasets: [{ data: bars, backgroundColor: classColors, borderRadius: 8 }],
       },
       options: {
         animation: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}% attendance` } },
+        },
         scales: { y: { min: 0, max: 100 } },
         responsive: true,
         maintainAspectRatio: true,
@@ -168,6 +195,7 @@ function renderCharts() {
     });
   } else {
     state.charts.classBars.data.datasets[0].data = bars;
+    state.charts.classBars.data.datasets[0].backgroundColor = classColors;
     state.charts.classBars.update("none");
   }
 }
@@ -182,7 +210,7 @@ function renderLogs() {
   const tbody = document.getElementById("logRows");
   const logs = selectedLogs();
   if (!logs.length) {
-    tbody.innerHTML = `<tr><td colspan="5">No records found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No records found.</div></td></tr>`;
     return;
   }
   tbody.innerHTML = logs
@@ -194,7 +222,7 @@ function renderNotifications() {
   const root = document.getElementById("notificationList");
   const notes = state.data.notifications || [];
   if (!notes.length) {
-    root.innerHTML = `<li><time>Now</time><p>No alerts yet.</p></li>`;
+    root.innerHTML = `<li><p class="empty-state">No alerts yet.</p></li>`;
     return;
   }
   root.innerHTML = notes
@@ -207,7 +235,7 @@ function renderLeaveRequests() {
   const root = document.getElementById("leaveRows");
   const requests = state.data.leaveRequests || [];
   if (!requests.length) {
-    root.innerHTML = `<tr><td colspan="5">No leave requests yet.</td></tr>`;
+    root.innerHTML = `<tr><td colspan="5"><div class="empty-state">No leave requests yet.</div></td></tr>`;
     return;
   }
   root.innerHTML = requests
@@ -292,6 +320,9 @@ function renderProfile() {
   document.getElementById("publicName").textContent = s.name;
   document.getElementById("publicClass").textContent = roleText;
   document.getElementById("publicRoll").textContent = s.roll;
+  document.getElementById("heroName").textContent = s.name;
+  document.getElementById("heroClass").textContent = `${s.className} • Sec ${s.section}`;
+  setAvatar(document.getElementById("heroAvatar"), s.name, s.photoDataUrl);
 
   document.getElementById("profileNameInput").value = s.name;
   document.getElementById("rollNumberInput").value = s.roll;
@@ -339,6 +370,9 @@ function renderTop() {
   const banner = document.getElementById("syncBanner");
   banner.textContent = syncBannerText();
   banner.classList.toggle("offline", !navigator.onLine);
+  document.getElementById("chipRole").textContent = `Role: ${state.session.role}`;
+  document.getElementById("chipVisibility").textContent = `Visibility: ${state.student.visibilityPublic ? "Public" : "Private"}`;
+  document.getElementById("chipSync").textContent = `Sync: ${navigator.onLine ? "Online" : "Offline"}`;
 }
 
 function render() {
@@ -356,10 +390,12 @@ function render() {
 }
 
 async function refresh() {
+  document.body.classList.add("loading");
   const { data, student } = await window.attendanceApi.getDashboard();
   state.data = data;
   state.student = student;
   render();
+  document.body.classList.remove("loading");
 }
 
 async function updateStudent(patch, type = "Manual", action = "Student data updated") {
@@ -398,6 +434,7 @@ async function bindEvents() {
   });
 
   document.getElementById("themeToggle").addEventListener("change", (e) => setTheme(e.target.checked ? "dark" : "light"));
+  document.getElementById("themePreset").addEventListener("change", (e) => setThemePreset(e.target.value));
 
   document.getElementById("studentSelect").addEventListener("change", async (e) => {
     await window.attendanceApi.selectStudent(e.target.value);
@@ -474,6 +511,17 @@ async function bindEvents() {
 
   document.getElementById("profileForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const email = document.getElementById("emailInput").value.trim();
+    const phone = document.getElementById("phoneInput").value.trim();
+    const emailHint = document.getElementById("emailHint");
+    const phoneHint = document.getElementById("phoneHint");
+    const emailOk = /\S+@\S+\.\S+/.test(email);
+    const phoneOk = phone.replace(/\D/g, "").length >= 10;
+    emailHint.classList.toggle("error", !emailOk);
+    phoneHint.classList.toggle("error", !phoneOk);
+    emailHint.textContent = emailOk ? "Use a valid email" : "Please enter a valid email";
+    phoneHint.textContent = phoneOk ? "Min 10 digits" : "Phone needs at least 10 digits";
+    if (!emailOk || !phoneOk) return;
     await updateStudent(
       {
         name: document.getElementById("profileNameInput").value.trim(),
@@ -581,6 +629,14 @@ async function bindEvents() {
 
   document.getElementById("printPdfBtn").addEventListener("click", () => window.print());
 
+  document.querySelectorAll(".collapsible .panel-head").forEach((head) => {
+    head.addEventListener("click", () => {
+      if (window.innerWidth > 900) return;
+      const panel = head.closest(".collapsible");
+      panel?.classList.toggle("is-collapsed");
+    });
+  });
+
   window.addEventListener("online", refresh);
   window.addEventListener("offline", () => {
     state.pendingSync += 1;
@@ -589,14 +645,17 @@ async function bindEvents() {
 }
 
 async function init() {
+  document.body.classList.add("loading");
   state.session = await window.attendanceApi.getSession();
   if (!state.session) {
     window.location.href = "./login.html";
     return;
   }
   setTheme(state.theme);
+  setThemePreset(state.themePreset);
   await refresh();
   await bindEvents();
+  document.body.classList.remove("loading");
 }
 
 renderCalendar(new Date());

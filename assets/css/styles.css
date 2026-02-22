@@ -1141,3 +1141,229 @@ body[data-theme="dark"] .status.danger {
     grid-template-columns: 1fr;
   }
 }
+
+/* Visual polish pass */
+:root {
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --shadow-rest: 0 6px 16px rgba(20, 30, 90, 0.08);
+  --shadow-hover: 0 12px 24px rgba(20, 30, 90, 0.14);
+  --shadow-active: 0 4px 12px rgba(20, 30, 90, 0.12);
+}
+
+body {
+  line-height: 1.45;
+}
+
+.app-shell {
+  gap: var(--space-3);
+  padding: var(--space-3);
+  animation: app-enter 280ms ease;
+}
+
+@keyframes app-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel,
+.rail-card {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface) 92%, #f3f5ff 8%), var(--surface));
+  box-shadow: var(--shadow-rest);
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.panel:hover,
+.rail-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.panel:active,
+.rail-card:active {
+  box-shadow: var(--shadow-active);
+}
+
+.panel-head h2 {
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.kpi-label,
+.panel-head span,
+.helper-text {
+  font-size: 12px;
+}
+
+.kpi-value {
+  font-size: 34px;
+}
+
+.btn {
+  border-radius: 12px;
+}
+
+.btn.success,
+.btn.danger,
+.btn.soft {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--surface) 92%, transparent 8%);
+  backdrop-filter: blur(8px);
+  z-index: 15;
+  padding: var(--space-1) 0;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.chip::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.profile-hero-block {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
+  background: color-mix(in srgb, var(--surface-soft) 78%, #f2f5ff 22%);
+}
+
+.hero-avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+
+.hero-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.hero-sub {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.helper-text {
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.helper-text.error {
+  color: var(--danger);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: var(--space-3) var(--space-2);
+}
+
+.empty-state::before {
+  content: "📭";
+  display: block;
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.loading .skeleton-target,
+.loading .panel-head h2,
+.loading .panel-head span {
+  color: transparent !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading .skeleton-target::after,
+.loading .panel-head h2::after,
+.loading .panel-head span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #e9ebfb 20%, #f6f7ff 50%, #e9ebfb 80%);
+  animation: shimmer 1.1s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.collapsible .panel-head {
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .collapsible.is-collapsed > :not(.panel-head) {
+    display: none;
+  }
+
+  .topbar {
+    top: -1px;
+  }
+
+  .search-wrap input,
+  .search-wrap select,
+  .btn {
+    min-height: 42px;
+  }
+}
+
+body[data-preset="minimal"] {
+  --primary: #3b4acc;
+  --success: #1f9b75;
+  --warning: #cf9030;
+  --danger: #c74655;
+}
+
+body[data-preset="contrast"] {
+  --primary: #0f35ff;
+  --success: #008f5f;
+  --warning: #9b6400;
+  --danger: #b51237;
+  --text: #101225;
+}
